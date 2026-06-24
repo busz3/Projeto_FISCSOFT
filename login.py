@@ -1,6 +1,8 @@
 import customtkinter as ctk
 from tkinter import messagebox
 from PIL import Image
+from tela_lateral import Sidebar
+from usuarios import UsuariosPage
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -126,9 +128,39 @@ class LoginApp(ctk.CTk):
             return
 
         if usuario == "admin" and senha == "1234":
-            messagebox.showinfo("Sucesso", f"Bem-vindo, {usuario}!")
+            self.abrir_principal()
         else:
             messagebox.showerror("Erro", "Usuário ou senha incorretos!")
+
+    def abrir_principal(self):
+        self.destroy()
+
+        main_app = ctk.CTk()
+        main_app.title("FISCSOFT")
+        main_app.geometry("1200x700")
+        main_app.configure(fg_color="#FFFFFF")
+
+        content_frame = ctk.CTkFrame(main_app, fg_color="#F5F5F5")
+        content_frame.pack(side="right", fill="both", expand=True)
+
+        def navegar(pagina):
+            for w in content_frame.winfo_children():
+                w.destroy()
+            if pagina == "Usuários Externos":
+                UsuariosPage(content_frame).pack(fill="both", expand=True)
+            else:
+                ctk.CTkLabel(
+                    content_frame,
+                    text=pagina,
+                    font=ctk.CTkFont(size=24, weight="bold"),
+                    text_color="#111111",
+                ).pack(expand=True)
+
+        sidebar = Sidebar(main_app, width=210, on_navigate=navegar)
+        sidebar.pack(side="left", fill="y")
+
+        navegar("Usuários Externos")
+        main_app.mainloop()
 
     def login_certificado(self):
         self.mostrando_form = True

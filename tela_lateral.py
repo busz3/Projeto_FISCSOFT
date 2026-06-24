@@ -43,14 +43,27 @@ class Sidebar(ctk.CTkFrame):
             ("Relatórios", "assets/relatorios.png"),
             ("Histórico", "assets/relogio.png"),
             ("Destinação", "assets/caminhão.png"),
-            ("Usuários", "assets/usuarios.png"),
+            ("Usuários Externos", "assets/usuarios.png"),
+            ("Agente Ibama", "assets/Agente.png"),
         ]
 
         nav_container = ctk.CTkFrame(self, fg_color="transparent")
         nav_container.pack(fill="x", padx=18, pady=(0, 10))
 
         for text, img_path in self.nav_items:
-            btn_icon = carregar_icone(img_path)
+            if text == "Agente Ibama":
+                try:
+                    img = Image.open(img_path)
+                    img.thumbnail((16, 16))
+                    padded = Image.new("RGBA", (20, 20), (0, 0, 0, 0))
+                    pad_x = (20 - img.width) // 2
+                    pad_y = (20 - img.height) // 2
+                    padded.paste(img, (pad_x, pad_y), img if img.mode == "RGBA" else None)
+                    btn_icon = ctk.CTkImage(light_image=padded, dark_image=padded, size=(20, 20))
+                except Exception:
+                    btn_icon = None
+            else:
+                btn_icon = carregar_icone(img_path)
 
             btn = ctk.CTkButton(
                 nav_container,
@@ -76,28 +89,6 @@ class Sidebar(ctk.CTkFrame):
 
         bottom_frame = ctk.CTkFrame(self, fg_color="transparent")
         bottom_frame.pack(fill="x", padx=18, pady=(0, 22))
-
-        tema_escuro_icon = carregar_icone("assets/lua.png")
-
-        tema_container = ctk.CTkFrame(bottom_frame, fg_color="transparent", height=38)
-        tema_container.pack(fill="x", pady=(0, 8))
-
-        ctk.CTkFrame(tema_container, fg_color="#C8C8C8", corner_radius=8).place(relx=0, rely=0, relwidth=1, relheight=1, x=2, y=2)
-
-        ctk.CTkButton(
-            tema_container,
-            image=tema_escuro_icon,
-            text="   Tema Escuro",
-            anchor="w",
-            compound="left",
-            fg_color="#D2D2D2",
-            hover_color="#BEBEBE",
-            text_color="white",
-            height=38,
-            corner_radius=8,
-            font=ctk.CTkFont(family="Inter", size=12, weight="bold"),
-            state="disabled",
-        ).place(relx=0, rely=0, relwidth=1, relheight=1)
 
         sair_icon = None
         try:
@@ -135,6 +126,8 @@ class Sidebar(ctk.CTkFrame):
             self.on_navigate(page_name)
 
 if __name__ == "__main__":
+    from usuarios import UsuariosPage
+
     ctk.set_appearance_mode("light")
     ctk.set_default_color_theme("blue")
 
@@ -143,7 +136,25 @@ if __name__ == "__main__":
     app.geometry("1200x700")
     app.configure(fg_color="#FFFFFF")
 
-    sidebar = Sidebar(app, width=210)
+    content_frame = ctk.CTkFrame(app, fg_color="#F5F5F5")
+    content_frame.pack(side="right", fill="both", expand=True)
+
+    def navegar(pagina):
+        for w in content_frame.winfo_children():
+            w.destroy()
+        if pagina == "Usuários Externos":
+            UsuariosPage(content_frame).pack(fill="both", expand=True)
+        else:
+            ctk.CTkLabel(
+                content_frame,
+                text=pagina,
+                font=ctk.CTkFont(size=24, weight="bold"),
+                text_color="#111111",
+            ).pack(expand=True)
+
+    sidebar = Sidebar(app, width=210, on_navigate=navegar)
     sidebar.pack(side="left", fill="y")
+
+    navegar("Usuários Externos")
 
     app.mainloop()
