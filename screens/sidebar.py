@@ -50,7 +50,7 @@ class Sidebar(ctk.CTkFrame):
             ("Itens", "caixa.png"),
             ("Relatorios", "relatorios.png"),
             ("Historico", "relogio.png"),
-            ("Destinacao", "caminhao.png"),
+            ("Destinacao", "destinacao.png"),
             ("Usuarios Externos", "usuarios.png"),
             ("Agente Ibama", "Agente.png"),
         ]

@@ -6,6 +6,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 
 from config.styles import COLORS, FONTS
+from database.connection import Database
 
 
 class UsuariosPage(ctk.CTkFrame):
@@ -164,21 +165,25 @@ class UsuariosPage(ctk.CTkFrame):
         )
         self.table_body.pack(fill="both", expand=True)
 
-        self.usuarios = [
-            {"nome": "Joao Silva", "email": "joao.silva@empresa.com",
-             "perfil": "Administrador", "status": "Ativo"},
-            {"nome": "Maria Souza", "email": "maria.souza@empresa.com",
-             "perfil": "Usuario", "status": "Ativo"},
-            {"nome": "Carlos Pereira", "email": "carlos.pereira@empresa.com",
-             "perfil": "Usuario", "status": "Inativo"},
-            {"nome": "Ana Oliveira", "email": "ana.oliveira@empresa.com",
-             "perfil": "Supervisor", "status": "Ativo"},
-            {"nome": "Pedro Santos", "email": "pedro.santos@empresa.com",
-             "perfil": "Usuario", "status": "Ativo"},
-            {"nome": "Luciana Costa", "email": "luciana.costa@empresa.com",
-             "perfil": "Administrador", "status": "Inativo"},
-        ]
+        self.usuarios = self.carregar_do_banco()
         self.carregar_usuarios()
+
+    def carregar_do_banco(self):
+        db = Database()
+        if db.conectar():
+            resultados = db.executar("SELECT nome_agente, email, perfil, status FROM `agente ibama`")
+            usuarios = []
+            if resultados:
+                for row in resultados.fetchall():
+                    usuarios.append({
+                        "nome": row[0],
+                        "email": row[1],
+                        "perfil": row[2].capitalize(),
+                        "status": "Ativo" if row[3] == "ativo" else "Inativo",
+                    })
+            db.desconectar()
+            return usuarios
+        return []
 
     def carregar_usuarios(self):
         for widget in self.table_body.winfo_children():
@@ -270,10 +275,11 @@ class UsuariosPage(ctk.CTkFrame):
         self.entry_filtro2.delete(0, "end")
 
     def novo_usuario(self):
-        messagebox.showinfo(
-            "Novo Usuario",
-            "Funcionalidade de cadastro sera implementada."
-        )
+        from screens.cadastrar_usuario import CadastrarUsuarioWindow
+        janela = CadastrarUsuarioWindow(self)
+        self.wait_window(janela)
+        self.usuarios = self.carregar_do_banco()
+        self.carregar_usuarios()
 
     def visualizar(self, usuario):
         messagebox.showinfo(
@@ -289,7 +295,15 @@ class UsuariosPage(ctk.CTkFrame):
         if messagebox.askyesno(
             "Excluir", f"Deseja excluir {usuario['nome']}?"
         ):
-            self.usuarios.remove(usuario)
+            db = Database()
+            if db.conectar():
+                db.executar(
+                    "DELETE FROM `agente ibama` WHERE nome_agente = %s",
+                    (usuario["nome"],)
+                )
+                db.commitar()
+                db.desconectar()
+            self.usuarios = self.carregar_do_banco()
             self.carregar_usuarios()
 
 
