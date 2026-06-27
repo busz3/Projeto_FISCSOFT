@@ -2,6 +2,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 from PIL import Image
 import os
+from datetime import datetime
 
 from screens.sidebar import Sidebar
 from screens.usuarios import UsuariosPage
@@ -141,6 +142,16 @@ class LoginApp(ctk.CTk):
             if registro:
                 if registro[1] == "ativo":
                     self.usuario_logado = registro[0]
+
+                    db2 = Database()
+                    if db2.conectar():
+                        db2.executar(
+                            "UPDATE `agente ibama` SET ultimo_acesso = %s WHERE login = %s",
+                            (datetime.now(), usuario)
+                        )
+                        db2.commitar()
+                        db2.desconectar()
+
                     self.abrir_principal()
                 else:
                     messagebox.showerror("Erro", "Usuario inativo! Contate o administrador.")
@@ -156,6 +167,7 @@ class LoginApp(ctk.CTk):
         main_app.title("FISCSOFT")
         main_app.geometry("1200x700")
         main_app.configure(fg_color=COLORS["white"])
+        main_app.usuario_logado = self.usuario_logado
 
         content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
         content_frame.pack(side="right", fill="both", expand=True)
@@ -164,7 +176,7 @@ class LoginApp(ctk.CTk):
             for w in content_frame.winfo_children():
                 w.destroy()
             if pagina == "Usuarios Externos":
-                UsuariosPage(content_frame).pack(fill="both", expand=True)
+                UsuariosPage(content_frame, usuario_logado=main_app.usuario_logado).pack(fill="both", expand=True)
             else:
                 ctk.CTkLabel(
                     content_frame,

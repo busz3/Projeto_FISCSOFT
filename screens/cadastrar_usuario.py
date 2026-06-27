@@ -7,8 +7,10 @@ from database.connection import Database
 
 
 class CadastrarUsuarioWindow(ctk.CTkToplevel):
-    def __init__(self, master=None):
+    def __init__(self, master=None, usuario=None, usuario_logado=None):
         super().__init__(master)
+        self.usuario_edicao = usuario
+        self.usuario_logado = usuario_logado
         self.title("FISCSOFT - Cadastrar Usuário")
         self.geometry("820x700")
         self.resizable(False, False)
@@ -16,6 +18,9 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
         self.grab_set()
 
         self.build_ui()
+
+        if self.usuario_edicao:
+            self.preencher_campos()
 
     def build_ui(self):
         container = ctk.CTkFrame(
@@ -133,6 +138,19 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
             command=self.destroy,
         ).pack(side="right")
 
+    def preencher_campos(self):
+        u = self.usuario_edicao
+        self.entry_nome.insert(0, u["nome"])
+        self.entry_cpf.insert(0, u["cpf"])
+        self.entry_email.insert(0, u["email"])
+        self.entry_telefone.insert(0, u.get("telefone", ""))
+        self.entry_matricula.insert(0, str(u["matricula"]))
+        self.entry_matricula.configure(state="disabled")
+        self.entry_login.insert(0, u["login"])
+        self.entry_senha.insert(0, u["senha"])
+        self.entry_confirmar.insert(0, u["senha"])
+        self.combo_perfil.set(u["perfil"].lower())
+
     def _criar_campo(self, parent, label, col, weight=1, show=None):
         parent.grid_columnconfigure(col, weight=weight)
 
@@ -207,16 +225,25 @@ class CadastrarUsuarioWindow(ctk.CTkToplevel):
 
         db = Database()
         if db.conectar():
-            sql = """INSERT INTO `agente ibama`
-                     (matricula, nome_agente, cpf, email, telefone, login, senha, perfil, status)
-                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'ativo')"""
-            params = (matricula_int, nome, cpf, email, telefone, login, senha, perfil)
+            if self.usuario_edicao:
+                sql = """UPDATE `agente ibama` SET
+                         nome_agente=%s, cpf=%s, email=%s, telefone=%s,
+                         login=%s, senha=%s, perfil=%s, atualizado_por=%s
+                         WHERE matricula=%s"""
+                params = (nome, cpf, email, telefone, login, senha, perfil, self.usuario_logado or "", matricula_int)
+                mensagem = f"Usuário '{nome}' atualizado com sucesso!"
+            else:
+                sql = """INSERT INTO `agente ibama`
+                         (matricula, nome_agente, cpf, email, telefone, login, senha, perfil, status, cadastrado_por)
+                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'ativo', %s)"""
+                params = (matricula_int, nome, cpf, email, telefone, login, senha, perfil, self.usuario_logado or "")
+                mensagem = f"Usuário '{nome}' cadastrado com sucesso!"
 
             db.executar(sql, params)
             db.commitar()
             db.desconectar()
 
-            messagebox.showinfo("Sucesso", f"Usuário '{nome}' cadastrado com sucesso!")
+            messagebox.showinfo("Sucesso", mensagem)
             self.destroy()
         else:
             messagebox.showerror("Erro", "Não foi possível conectar ao banco de dados!")

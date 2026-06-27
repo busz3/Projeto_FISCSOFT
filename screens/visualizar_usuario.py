@@ -1,0 +1,162 @@
+import customtkinter as ctk
+from config.styles import COLORS, FONTS
+
+
+class VisualizarUsuarioWindow(ctk.CTkToplevel):
+    def __init__(self, master, usuario):
+        super().__init__(master)
+        self.usuario = usuario
+
+        self.title("Visualização de Usuário")
+        self.geometry("700x620")
+        self.resizable(False, False)
+        self.configure(fg_color=COLORS["white"])
+        self.transient(master)
+        self.grab_set()
+
+        self.after(10, self._centralizar)
+
+        main_container = ctk.CTkFrame(self, fg_color=COLORS["white"], corner_radius=10, border_width=1, border_color=COLORS["border"])
+        main_container.pack(fill="both", expand=True, padx=20, pady=20)
+
+        top_bar = ctk.CTkFrame(main_container, fg_color="transparent")
+        top_bar.pack(fill="x", padx=25, pady=(20, 0))
+
+        ctk.CTkLabel(
+            top_bar, text="Visualização de Usuário",
+            font=ctk.CTkFont(size=20, weight="bold"),
+            text_color=COLORS["primary"]
+        ).pack(anchor="w")
+
+        ctk.CTkLabel(
+            top_bar, text="Consulte os dados do usuário",
+            font=ctk.CTkFont(size=FONTS["size_body"]),
+            text_color=COLORS["text_muted"]
+        ).pack(anchor="w", pady=(2, 0))
+
+        ctk.CTkButton(
+            top_bar, text="X", width=30, height=30,
+            corner_radius=6, fg_color="transparent",
+            hover_color="#F0F0F0", text_color=COLORS["text_muted"],
+            font=ctk.CTkFont(size=16, weight="bold"),
+            command=self.destroy
+        ).pack(anchor="ne", side="right", pady=(0, 0))
+
+        content = ctk.CTkFrame(main_container, fg_color=COLORS["white"], corner_radius=8, border_width=1, border_color=COLORS["border"])
+        content.pack(fill="both", expand=True, padx=25, pady=(15, 20))
+
+        self._build_dados_pessoais(content)
+        self._build_dados_acesso(content)
+        self._build_informacoes_adicionais(content)
+        self._build_botao_editar(content)
+
+    def _centralizar(self):
+        self.update_idletasks()
+        w = self.winfo_width()
+        h = self.winfo_height()
+        x = (self.winfo_screenwidth() // 2) - (w // 2)
+        y = (self.winfo_screenheight() // 2) - (h // 2)
+        self.geometry(f"+{x}+{y}")
+
+    def _build_section_label(self, parent, text):
+        ctk.CTkLabel(
+            parent, text=text,
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+            text_color=COLORS["text"]
+        ).pack(anchor="w", padx=20, pady=(15, 5))
+
+    def _build_field_row(self, parent, fields, pad_top=0):
+        row = ctk.CTkFrame(parent, fg_color="transparent")
+        row.pack(fill="x", padx=20, pady=(pad_top, 0))
+
+        col_count = len(fields)
+        for i, (label, value) in enumerate(fields):
+            field_frame = ctk.CTkFrame(row, fg_color="transparent")
+            field_frame.pack(side="left", fill="x", expand=True, padx=(0, 15) if i < col_count - 1 else (0, 0))
+
+            ctk.CTkLabel(
+                field_frame, text=label,
+                font=ctk.CTkFont(size=FONTS["size_small"]),
+                text_color=COLORS["text_muted"], anchor="w"
+            ).pack(anchor="w")
+
+            entry = ctk.CTkEntry(
+                field_frame, height=34, corner_radius=6,
+                border_width=1, border_color=COLORS["border"],
+                fg_color="#F5F5F5", text_color=COLORS["text"],
+                font=ctk.CTkFont(size=FONTS["size_body"]),
+                state="normal"
+            )
+            entry.pack(fill="x", pady=(2, 0))
+            entry.insert(0, value)
+            entry.configure(state="disabled")
+
+    def _build_dados_pessoais(self, parent):
+        self._build_section_label(parent, "Dados Pessoais")
+        self._build_field_row(parent, [
+            ("Nome Completo", self.usuario.get("nome", "")),
+            ("CPF", self.usuario.get("cpf", "")),
+        ])
+        self._build_field_row(parent, [
+            ("E-mail", self.usuario.get("email", "")),
+            ("Telefone", self.usuario.get("telefone", "")),
+        ], pad_top=10)
+
+    def _build_dados_acesso(self, parent):
+        self._build_section_label(parent, "Dados de Acesso")
+        self._build_field_row(parent, [
+            ("Login", self.usuario.get("login", "")),
+            ("Perfil", self.usuario.get("perfil", "")),
+        ])
+
+    def _build_informacoes_adicionais(self, parent):
+        self._build_section_label(parent, "Informações Adicionais")
+        row = ctk.CTkFrame(parent, fg_color="transparent")
+        row.pack(fill="x", padx=20, pady=(5, 0))
+
+        campos = [
+            ("Data de cadastro", self.usuario.get("data_cadastro", "")),
+            ("Último Acesso", self.usuario.get("ultimo_acesso", "")),
+            ("Cadastrado por", self.usuario.get("cadastrado_por", "")),
+            ("Atualizado por", self.usuario.get("atualizado_por", "")),
+        ]
+
+        for i, (label, value) in enumerate(campos):
+            field_frame = ctk.CTkFrame(row, fg_color="transparent")
+            field_frame.pack(side="left", fill="x", expand=True, padx=(0, 10) if i < 3 else (0, 0))
+
+            ctk.CTkLabel(
+                field_frame, text=label,
+                font=ctk.CTkFont(size=FONTS["size_small"]),
+                text_color=COLORS["text_muted"], anchor="w"
+            ).pack(anchor="w")
+
+            entry = ctk.CTkEntry(
+                field_frame, height=34, corner_radius=6,
+                border_width=1, border_color=COLORS["border"],
+                fg_color="#F5F5F5", text_color=COLORS["text"],
+                font=ctk.CTkFont(size=FONTS["size_body"]),
+            )
+            entry.pack(fill="x", pady=(2, 0))
+            entry.insert(0, value)
+            entry.configure(state="disabled")
+
+    def _build_botao_editar(self, parent):
+        btn_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        btn_frame.pack(fill="x", padx=20, pady=(20, 20))
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Editar Usuário",
+            height=40, corner_radius=8,
+            fg_color=COLORS["primary"],
+            hover_color=COLORS["primary_hover"],
+            text_color="white", border_width=0,
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+            command=self._on_editar
+        ).pack(anchor="center")
+
+    def _on_editar(self):
+        self.destroy()
+        if hasattr(self.master, "editar"):
+            self.master.editar(self.usuario)
