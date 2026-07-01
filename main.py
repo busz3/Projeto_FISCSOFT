@@ -5,6 +5,8 @@ import os
 
 from screens.sidebar import Sidebar
 from screens.usuarios import UsuariosPage
+from screens.itens import ItensPage
+from screens.infratores import InfratoresPage
 from config.styles import ASSETS_DIR, COLORS
 from config.database import LOGIN_USER, LOGIN_PASS
 
@@ -152,6 +154,10 @@ class LoginApp(ctk.CTk):
                 w.destroy()
             if pagina == "Usuarios Externos":
                 UsuariosPage(content_frame).pack(fill="both", expand=True)
+            elif pagina == "Itens":
+                ItensPage(content_frame, on_voltar=lambda: navegar("Menu Inicial")).pack(fill="both", expand=True)
+            elif pagina == "Agente Ibama":
+                InfratoresPage(content_frame).pack(fill="both", expand=True)
             else:
                 ctk.CTkLabel(
                     content_frame,
