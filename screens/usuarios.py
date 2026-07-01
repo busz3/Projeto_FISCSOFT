@@ -4,14 +4,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import customtkinter as ctk
 from tkinter import messagebox
+from PIL import Image
+import os
 
-from config.styles import COLORS, FONTS
+from config.styles import COLORS, FONTS, ASSETS_DIR
+from database.connection import Database
 
 
 class UsuariosPage(ctk.CTkFrame):
-    def __init__(self, master, **kwargs):
+    def __init__(self, master, usuario_logado=None, **kwargs):
         super().__init__(master, **kwargs)
         self.configure(fg_color=COLORS["bg"])
+        self.usuario_logado = usuario_logado
 
         self.build_header()
         self.build_filter_bar()
@@ -90,35 +94,68 @@ class UsuariosPage(ctk.CTkFrame):
         btn_frame = ctk.CTkFrame(row, fg_color="transparent")
         btn_frame.pack(side="left", padx=(5, 0))
 
+        try:
+            lupa_icon = ctk.CTkImage(
+                light_image=Image.open(os.path.join(ASSETS_DIR, "lupa.png")),
+                dark_image=Image.open(os.path.join(ASSETS_DIR, "lupa.png")),
+                size=(18, 18),
+            )
+        except Exception:
+            lupa_icon = None
+
         ctk.CTkButton(
             btn_frame,
-            text="\U0001f50d  Pesquisar",
+            image=lupa_icon,
+            text="  Pesquisar",
             height=38, corner_radius=6,
             fg_color=COLORS["white"], hover_color="#F0F0F0",
             text_color=COLORS["text"],
             border_width=1, border_color=COLORS["border"],
-            font=ctk.CTkFont(size=FONTS["size_body"]),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="normal"),
+            compound="left",
             command=self.pesquisar,
         ).pack(side="left", padx=(0, 8))
 
+        try:
+            apagar_icon = ctk.CTkImage(
+                light_image=Image.open(os.path.join(ASSETS_DIR, "apagar.png")),
+                dark_image=Image.open(os.path.join(ASSETS_DIR, "apagar.png")),
+                size=(18, 18),
+            )
+        except Exception:
+            apagar_icon = None
+
         ctk.CTkButton(
             btn_frame,
-            text="\u2715  Limpar",
+            image=apagar_icon,
+            text="  Limpar",
             height=38, corner_radius=6,
             fg_color=COLORS["white"], hover_color="#F0F0F0",
             text_color=COLORS["text"],
             border_width=1, border_color=COLORS["border"],
-            font=ctk.CTkFont(size=FONTS["size_body"]),
+            font=ctk.CTkFont(size=FONTS["size_body"], weight="normal"),
+            compound="left",
             command=self.limpar_filtros,
         ).pack(side="left", padx=(0, 8))
 
+        try:
+            mais_icon = ctk.CTkImage(
+                light_image=Image.open(os.path.join(ASSETS_DIR, "mais.png")),
+                dark_image=Image.open(os.path.join(ASSETS_DIR, "mais.png")),
+                size=(18, 18),
+            )
+        except Exception:
+            mais_icon = None
+
         ctk.CTkButton(
             btn_frame,
-            text="+  Novo Usuario",
+            image=mais_icon,
+            text="  Novo Usuario",
             height=38, corner_radius=6,
             fg_color=COLORS["primary"], hover_color=COLORS["primary_hover"],
             text_color="white", border_width=0,
             font=ctk.CTkFont(size=FONTS["size_body"], weight="bold"),
+            compound="left",
             command=self.novo_usuario,
         ).pack(side="left")
 
@@ -164,21 +201,49 @@ class UsuariosPage(ctk.CTkFrame):
         )
         self.table_body.pack(fill="both", expand=True)
 
-        self.usuarios = [
-            {"nome": "Joao Silva", "email": "joao.silva@empresa.com",
-             "perfil": "Administrador", "status": "Ativo"},
-            {"nome": "Maria Souza", "email": "maria.souza@empresa.com",
-             "perfil": "Usuario", "status": "Ativo"},
-            {"nome": "Carlos Pereira", "email": "carlos.pereira@empresa.com",
-             "perfil": "Usuario", "status": "Inativo"},
-            {"nome": "Ana Oliveira", "email": "ana.oliveira@empresa.com",
-             "perfil": "Supervisor", "status": "Ativo"},
-            {"nome": "Pedro Santos", "email": "pedro.santos@empresa.com",
-             "perfil": "Usuario", "status": "Ativo"},
-            {"nome": "Luciana Costa", "email": "luciana.costa@empresa.com",
-             "perfil": "Administrador", "status": "Inativo"},
-        ]
+        self.usuarios = self.carregar_do_banco()
         self.carregar_usuarios()
+
+    def carregar_do_banco(self):
+        db = Database()
+        if db.conectar():
+            sql = """SELECT matricula, nome_agente, cpf, email, telefone, login, senha, perfil, status,
+                            data_cadastro, ultimo_acesso, cadastrado_por, atualizado_por
+                     FROM `agente ibama`"""
+            resultados = db.executar(sql)
+            usuarios = []
+            if resultados:
+                for row in resultados.fetchall():
+                    ultimo_acesso = row[10]
+                    if ultimo_acesso:
+                        ultimo_acesso = ultimo_acesso.strftime("%d/%m/%Y %H:%M")
+                    else:
+                        ultimo_acesso = ""
+
+                    data_cadastro = row[9]
+                    if data_cadastro:
+                        data_cadastro = data_cadastro.strftime("%d/%m/%Y %H:%M")
+                    else:
+                        data_cadastro = ""
+
+                    usuarios.append({
+                        "matricula": row[0],
+                        "nome": row[1],
+                        "cpf": row[2],
+                        "email": row[3],
+                        "telefone": row[4],
+                        "login": row[5],
+                        "senha": row[6],
+                        "perfil": row[7].capitalize(),
+                        "status": "Ativo" if row[8] == "ativo" else "Inativo",
+                        "data_cadastro": data_cadastro,
+                        "ultimo_acesso": ultimo_acesso,
+                        "cadastrado_por": row[11] or "",
+                        "atualizado_por": row[12] or "",
+                    })
+            db.desconectar()
+            return usuarios
+        return []
 
     def carregar_usuarios(self):
         for widget in self.table_body.winfo_children():
@@ -270,26 +335,37 @@ class UsuariosPage(ctk.CTkFrame):
         self.entry_filtro2.delete(0, "end")
 
     def novo_usuario(self):
-        messagebox.showinfo(
-            "Novo Usuario",
-            "Funcionalidade de cadastro sera implementada."
-        )
+        from screens.cadastrar_usuario import CadastrarUsuarioWindow
+        janela = CadastrarUsuarioWindow(self, usuario_logado=self.usuario_logado)
+        self.wait_window(janela)
+        self.usuarios = self.carregar_do_banco()
+        self.carregar_usuarios()
 
     def visualizar(self, usuario):
-        messagebox.showinfo(
-            "Visualizar", f"Visualizando: {usuario['nome']}"
-        )
+        from screens.visualizar_usuario import VisualizarUsuarioWindow
+        janela = VisualizarUsuarioWindow(self, usuario)
+        self.wait_window(janela)
 
     def editar(self, usuario):
-        messagebox.showinfo(
-            "Editar", f"Editando: {usuario['nome']}"
-        )
+        from screens.cadastrar_usuario import CadastrarUsuarioWindow
+        janela = CadastrarUsuarioWindow(self, usuario=usuario, usuario_logado=self.usuario_logado)
+        self.wait_window(janela)
+        self.usuarios = self.carregar_do_banco()
+        self.carregar_usuarios()
 
     def excluir(self, usuario):
         if messagebox.askyesno(
             "Excluir", f"Deseja excluir {usuario['nome']}?"
         ):
-            self.usuarios.remove(usuario)
+            db = Database()
+            if db.conectar():
+                db.executar(
+                    "DELETE FROM `agente ibama` WHERE nome_agente = %s",
+                    (usuario["nome"],)
+                )
+                db.commitar()
+                db.desconectar()
+            self.usuarios = self.carregar_do_banco()
             self.carregar_usuarios()
 
 

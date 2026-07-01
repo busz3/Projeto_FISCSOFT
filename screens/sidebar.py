@@ -28,9 +28,6 @@ class Sidebar(ctk.CTkFrame):
         self.on_navigate = on_navigate
         self.pack_propagate(False)
 
-        linha_direita = ctk.CTkFrame(self, fg_color="#C8C8C8", width=2, corner_radius=0)
-        linha_direita.pack(side="right", fill="y")
-
         logo_frame = ctk.CTkFrame(self, fg_color="transparent")
         logo_frame.pack(pady=(35, 45))
 
@@ -50,7 +47,7 @@ class Sidebar(ctk.CTkFrame):
             ("Itens", "caixa.png"),
             ("Relatorios", "relatorios.png"),
             ("Historico", "relogio.png"),
-            ("Destinacao", "caminhao.png"),
+            ("Destinacao", "destinacao.png"),
             ("Usuarios Externos", "usuarios.png"),
             ("Agente Ibama", "Agente.png"),
         ]

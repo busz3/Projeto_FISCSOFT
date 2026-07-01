@@ -2,13 +2,14 @@ import customtkinter as ctk
 from tkinter import messagebox
 from PIL import Image
 import os
+from datetime import datetime
 
 from screens.sidebar import Sidebar
 from screens.usuarios import UsuariosPage
 from screens.itens import ItensPage
 from screens.infratores import InfratoresPage
 from config.styles import ASSETS_DIR, COLORS
-from config.database import LOGIN_USER, LOGIN_PASS
+from database.connection import Database
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
@@ -133,10 +134,33 @@ class LoginApp(ctk.CTk):
             messagebox.showwarning("Atencao", "Preencha todos os campos!")
             return
 
-        if usuario == LOGIN_USER and senha == LOGIN_PASS:
-            self.abrir_principal()
+        db = Database()
+        if db.conectar():
+            sql = "SELECT nome_agente, status FROM `agente ibama` WHERE login = %s AND senha = %s"
+            resultado = db.executar(sql, (usuario, senha))
+            registro = resultado.fetchone() if resultado else None
+            db.desconectar()
+
+            if registro:
+                if registro[1] == "ativo":
+                    self.usuario_logado = registro[0]
+
+                    db2 = Database()
+                    if db2.conectar():
+                        db2.executar(
+                            "UPDATE `agente ibama` SET ultimo_acesso = %s WHERE login = %s",
+                            (datetime.now(), usuario)
+                        )
+                        db2.commitar()
+                        db2.desconectar()
+
+                    self.abrir_principal()
+                else:
+                    messagebox.showerror("Erro", "Usuario inativo! Contate o administrador.")
+            else:
+                messagebox.showerror("Erro", "Usuario ou senha incorretos!")
         else:
-            messagebox.showerror("Erro", "Usuario ou senha incorretos!")
+            messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
 
     def abrir_principal(self):
         self.destroy()
@@ -145,6 +169,7 @@ class LoginApp(ctk.CTk):
         main_app.title("FISCSOFT")
         main_app.geometry("1200x700")
         main_app.configure(fg_color=COLORS["white"])
+        main_app.usuario_logado = self.usuario_logado
 
         content_frame = ctk.CTkFrame(main_app, fg_color=COLORS["bg"])
         content_frame.pack(side="right", fill="both", expand=True)
