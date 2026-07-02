@@ -6,7 +6,7 @@ import customtkinter as ctk
 from tkinter import messagebox
 
 from config.styles import COLORS, FONTS
-from database.connection import Database
+from conexaodb import Database
 
 
 class InfratoresPage(ctk.CTkFrame):

@@ -8,7 +8,7 @@ from PIL import Image
 import os
 
 from config.styles import COLORS, FONTS, ASSETS_DIR
-from database.connection import Database
+from conexaodb import Database
 
 
 class UsuariosPage(ctk.CTkFrame):
