@@ -1,15 +1,17 @@
 import mysql.connector
 from mysql.connector import Error
+from dotenv import load_dotenv
+import os
 
-from config.database import DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
+load_dotenv()
 
 
 class Database:
     def __init__(self):
-        self.host = DB_HOST
-        self.user = DB_USER
-        self.password = DB_PASSWORD
-        self.database = DB_NAME
+        self.host = os.getenv("DB_HOST")
+        self.user = os.getenv("DB_USER")
+        self.password = os.getenv("DB_PASSWORD")
+        self.database = os.getenv("DB_NAME")
         self.conexao = None
 
     def conectar(self):

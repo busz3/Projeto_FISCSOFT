@@ -153,6 +153,7 @@ class LoginApp(ctk.CTk):
             messagebox.showerror("Erro", "Nao foi possivel conectar ao banco de dados!")
 
     def abrir_principal(self):
+        self.quit()
         self.destroy()
 
         main_app = ctk.CTk()
